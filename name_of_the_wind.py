@@ -2,12 +2,12 @@
 
 from threading import Thread
 import socket, ssl
-from wind_controller import WindController
-from calibrator import FitSpeed
+from wind_controller import WindController2
+# from calibrator import FitSpeed
 
 __author__ = 'Janez Presern'
 
-wc = WindController(n_motors=1)
+wc = WindController2(n_motors=1, pwmFreq=100)
 pFreq = int(wc.pwmFreq)
 pStop = int(wc.pwmDict[pFreq][0])
 pStart = int(wc.pwmDict[pFreq][1])
@@ -38,7 +38,8 @@ def rec_data(conn, MAX_BUFFER_SIZE):
     return input_from_client
 
 
-def client_thread(conn, ip, port, fs, MAX_BUFFER_SIZE = 8888):
+def client_thread(conn, ip, port, MAX_BUFFER_SIZE = 8888):
+# def client_thread(conn, ip, port, fs, MAX_BUFFER_SIZE=8888):
 
     # read lines periodically without ending connection
     still_listen = True
@@ -53,55 +54,19 @@ def client_thread(conn, ip, port, fs, MAX_BUFFER_SIZE = 8888):
             conn.close()
             print('Connection ' + ip + ':' + port + " ended")
             still_listen = False
-        # elif "arm" in input_from_client:
-        #     print('arm')
-        #     wc.armMotors()
-        #     speed = wc.getPWM(0)
-        #     conn.send(str(speed).encode("utf_8"))
+
         elif "arm" in input_from_client:
-            print('arm')
-            wc.armMotors()
+
+            wc.armMotors(input_from_client.split("_")[1])
             conn.send(str("armed").encode("utf_8"))
-        elif "start" in input_from_client:
-            print('starting')
-            speed = pStart
-            wc.setPwmForAllMotors(speed)
-            #conn.send(str(fs.look_up(speed)).encode("utf_8")
-            conn.send(str(speed).encode("utf_8"))
 
-        elif "stop" in input_from_client:
-            print('stopping')
-            # speed = pStop
-            # wc.setPwmForAllMotors(speed)
-            wc.stopMotors()
-            conn.send(str(0).encode("utf_8"))
-        elif "accelerate" in input_from_client:
-            speed = wc.getPWM()
-            if speed >= pMax:
-                speed += 0
-                print('faster cannot go')
-            else:
-                print('accelerating')
-                wc.setPwmForAllMotors(speed + 1)
-           # conn.send(str(fs.look_up(speed)).encode("utf_8")
-            conn.send(str(speed).encode("utf_8"))
-        elif "decelerate" in input_from_client:
-            speed = wc.getPWM()
-            if speed <= pStart:
-                print('stopping')
-            else:
-                wc.setPwmForAllMotors(speed - 1)
-            #conn.send(str(fs.look_up(speed)).encode("utf_8"))
-            conn.send(str(speed).encode("utf_8"))
         else:
-            splin = input_from_client.split('\t')
-            print("{}".format(splin[0]))
-            conn.send(str(count).encode("utf_8"))
-            count += 1
-            print(count)
 
+            wc.setSpeed(int(input_from_client))
+            conn.send(str("done").encode("utf_8"))
 
-def start_server(fit_speed):
+def start_server():
+# def start_server(fit_speed):
 
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # this is for easy starting/killing the app
@@ -129,7 +94,8 @@ def start_server(fit_speed):
         ip, port = str(addr[0]), str(addr[1])
         print('Accepting connection from ' + ip + ':' + port)
         try:
-            Thread(target=client_thread, args=(conn, ip, port, fs)).start()
+            # Thread(target=client_thread, args=(conn, ip, port, fs)).start()
+            Thread(target=client_thread, args=(conn, ip, port)).start()
             # client_thread(conn, ip, port)
         except:
             print("Terible error!")
@@ -139,5 +105,6 @@ def start_server(fit_speed):
 
 
 if __name__ == "__main__":
-    fs = FitSpeed('./kalibracije/kalibracija.csv')
-    start_server(fs)
+    # fs = FitSpeed('./kalibracije/kalibracija.csv')
+    # start_server(fs)
+    start_server()

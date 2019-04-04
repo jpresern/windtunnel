@@ -16,7 +16,7 @@ class Motor:
         self.maxPwm = maxPwm
 
     def arm(self):
-        print('Arming motor on channel: '+str(self.channel))
+        print('Arming motor on channel: '+ str(self.channel))
         self.pwmValue = self.pwmStop
         self.pwm.set_pwm(self.channel, 0, self.pwmValue)
 
@@ -34,7 +34,7 @@ class Motor:
         return self.pwmValue
 
     def stop(self):
-        print('Stopping motor on channel: '+str(self.channel))
+        print('Stopping motor on channel: '+ str(self.channel))
         self.pwmValue = self.pwmStop
         self.pwm.set_pwm(self.channel, 0, self.pwmStop)
 

@@ -3,8 +3,10 @@ import time
 from motor import Motor
 
 
-class WindController:
-
+class WindController2:
+    """
+    Class WindController2 was developed from WindController to controle single
+    engine instance. The code has been abbrevaited etc.
     # Min @ 60
     # us: 1060 / (1000000.0 / 4096 / 60) = 260
     # start @ 60
@@ -25,8 +27,9 @@ class WindController:
     # us: ......                          = 1954
     # Max @ 400
     # Hz: 2000 / (1000000.0 / 4096 / 400) = 3047
+    """
 
-    def __init__(self, n_motors=1):
+    def __init__(self, n_motors=1, pwmFreq=100):
 
         self.pwmDict = {60: [260, 276, 457],
                         100: [434, 481, 761],
@@ -34,7 +37,63 @@ class WindController:
                         }
 
         self.pwm = Adafruit_PCA9685.PCA9685()
-        self.pwmFreq = int(100)
+        self.pwmFreq = int(pwmFreq)
+        self.pwm.set_pwm_freq(self.pwmFreq)
+
+        self.pwStop = 0
+        self.pwMin = 0
+        self.pwMax = 0
+
+    def armMotors(self, pwValues):
+
+        print('Arming motor')
+        self.pwStop = int(pwValues.split("-")[0])
+        self.pwMin = int(pwValues.split("-")[1])
+        self.pwMax = int(pwValues.split("-")[2])
+        self.pwm.set_pwm(0, 0, self.pwStop)
+
+    def stopMotors(self):
+
+        print('Stopping motor')
+        self.pwm.set_pwm(0, 0, self.pwStop)
+
+    def setSpeed(self, pwValue):
+        self.pwm.set_pwm(0, 0, pwValue)
+
+
+class WindController:
+    """
+    # Min @ 60
+    # us: 1060 / (1000000.0 / 4096 / 60) = 260
+    # start @ 60
+    # us: ......                         = 288
+    # Max @ 60
+    # Hz: 1860 / (1000000.0 / 4096 / 60) = 457
+    #
+    # Min @ 100
+    # us: 1060 / (1000000.0 / 4096 / 100) = 434
+    # start @ 100
+    # us: ......                          = 481
+    # Max @ 100
+    # us: 1860 / (1000000.0 / 4096 / 100) = 761
+    #
+    # Min @ 400
+    # Hz: 1400 / (1000000.0 / 4096 / 400) = 1736
+    # start @ 400
+    # us: ......                          = 1954
+    # Max @ 400
+    # Hz: 2000 / (1000000.0 / 4096 / 400) = 3047
+    """
+
+    def __init__(self, n_motors=1, pwmFreq=100):
+
+        self.pwmDict = {60: [260, 276, 457],
+                        100: [434, 481, 761],
+                        400: [1736, 1954, 3047]
+                        }
+
+        self.pwm = Adafruit_PCA9685.PCA9685()
+        self.pwmFreq = int(pwmFreq)
         self.pwm.set_pwm_freq(self.pwmFreq)
         self.motor_channels = []
         available_channels = [0, 1, 14, 15]
@@ -46,13 +105,7 @@ class WindController:
             self.motors.append(Motor(m, self.pwm, self.pwmDict[self.pwmFreq][0],
                                      self.pwmDict[self.pwmFreq][1], self.pwmDict[self.pwmFreq][2]))
 
-    def getPWMValueFromMicroseconds(self, microseconds):
-        """ used in the calculation of pwm: stop is 1060 us, full is 1860 us """
-        print(microseconds)
-        pwmValue = microseconds / (1000000.0/4096.0/float(self.pwmFreq))
-        return int(round(pwmValue))
-
-    def armMotors(self):
+    def armMotors(self, pw):
         print('Arming motors')
         for m in self.motors:
             m.arm()
@@ -110,3 +163,9 @@ class WindController:
 
             if not(exit):
                 self.setPwmForAllMotors(pwmValue)
+
+    def getPWMValueFromMicroseconds(self, microseconds):
+        """ used in the calculation of pwm: stop is 1060 us, full is 1860 us """
+        print(microseconds)
+        pwmValue = microseconds / (1000000.0/4096.0/float(self.pwmFreq))
+        return int(round(pwmValue))
